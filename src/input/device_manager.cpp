@@ -161,6 +161,10 @@ void DeviceManager::setAssignMode(const PlayerAssignMode assignMode)
         {
             m_keyboards[i].setPlayer(NULL);
         }
+        for (unsigned int i=0; i < m_canbuses.size(); i++)
+        {
+            m_canbuses[i].setPlayer(NULL);
+        }
     }
 }   // setAssignMode
 
@@ -233,6 +237,20 @@ void DeviceManager::addKeyboard(KeyboardDevice* d)
 }   // addKeyboard
 
 // -----------------------------------------------------------------------------
+void DeviceManager::addCanbus(CanbusDevice* d)
+{
+    m_canbuses.push_back(d);
+}   // addCanbus
+
+void DeviceManager::addDefaultCanbus()
+{
+   CanbusConfig* newConf = new CanbusConfig();
+   m_canbus_configs.push_back(newConf);
+   m_canbuses.push_back( new CanbusDevice(newConf) );
+   // addDefault CANBus interface
+}
+
+// -----------------------------------------------------------------------------
 void DeviceManager::addEmptyKeyboard()
 {
     KeyboardConfig* newConf = new KeyboardConfig();
@@ -259,6 +277,14 @@ bool DeviceManager::deleteConfig(DeviceConfig* config)
             n--;
         }
     }
+    for (unsigned int n=0; n<m_canbuses.size(); n++)
+    {
+        if (m_canbuses[n].getConfiguration() == config)
+        {
+            m_canbuses.erase(n);
+            n--;
+        }
+    }
     for (unsigned int n=0; n<m_gamepads.size(); n++)
     {
         if (m_gamepads[n].getConfiguration() == config)
@@ -269,6 +295,11 @@ bool DeviceManager::deleteConfig(DeviceConfig* config)
     }
 
     if (m_keyboard_configs.erase(config))
+    {
+        return true;
+    }
+
+    if (m_canbus_configs.erase(config))
     {
         return true;
     }
@@ -317,6 +348,44 @@ InputDevice* DeviceManager::mapKeyboardInput( int btnID, InputManager::InputDriv
 
     return NULL; // no appropriate binding found
 }   // mapKeyboardInput
+
+// -----------------------------------------------------------------------------
+
+InputDevice* DeviceManager::mapCanbusInput( int btnID, InputManager::InputDriverMode mode,
+                                              StateManager::ActivePlayer **player /* out */,
+                                              PlayerAction *action /* out */ )
+{
+    const int canbus_amount = m_canbuses.size();
+
+    //std::cout << "mapKeyboardInput " << btnID << " to " << keyboard_amount << " keyboards\n";
+
+    for (int n=0; n<canbus_amount; n++)
+    {
+        CanbusDevice *canbus = m_canbuses.get(n);
+
+        if (canbus->processAndMapInput(btnID, mode, action))
+        {
+            //std::cout << "   binding found in keyboard #"  << (n+1) << "; action is " << KartActionStrings[*action] << "\n";
+            if (m_single_player != NULL)
+            {
+                //printf("Single player\n");
+                *player = m_single_player;
+            }
+            else if (m_assign_mode == NO_ASSIGN) // Don't set the player in NO_ASSIGN mode
+            {
+                *player = NULL;
+            }
+            else
+            {
+                *player = canbus->m_player;
+            }
+            return canbus;
+        }
+    }
+
+    return NULL; // no appropriate binding found
+}   // mapKeyboardInput
+
 
 //-----------------------------------------------------------------------------
 
@@ -390,6 +459,9 @@ bool DeviceManager::translateInput( Input::InputType type,
                     *action = PA_MENU_SELECT;
             }
             break;
+        case Input::IT_CANBUS:
+	    device = mapCanbusInput(btnID, mode, player, action);
+	    break;
         case Input::IT_STICKBUTTON:
         case Input::IT_STICKMOTION:
             device = mapGamepadInput(type, deviceID, btnID, axisDir, value,
@@ -456,11 +528,13 @@ bool DeviceManager::deserialize()
         const int GAMEPAD = 1;
         const int KEYBOARD = 2;
         const int NOTHING = 3;
+        const int CANBUS = 4;
 
         int reading_now = NOTHING;
 
         KeyboardConfig* keyboard_config = NULL;
         GamepadConfig* gamepad_config = NULL;
+        CanbusConfig* canbus_config = NULL;
 
 
         // parse XML file
@@ -495,6 +569,11 @@ bool DeviceManager::deserialize()
                         gamepad_config = new GamepadConfig(xml);
                         reading_now = GAMEPAD;
                     }
+                    else if (strcmp("canbus", xml->getNodeName()) == 0)
+                    {
+                        canbus_config = new CanbusConfig();
+                        reading_now = CANBUS;
+                    }
                     else if (strcmp("action", xml->getNodeName()) == 0)
                     {
                         if(reading_now == KEYBOARD)
@@ -508,6 +587,12 @@ bool DeviceManager::deserialize()
                             if(gamepad_config != NULL)
                                 if(!gamepad_config->deserializeAction(xml))
                                      Log::error("Device manager","Ignoring an ill-formed gamepad action in input config.");
+                        }
+                        else if(reading_now == CANBUS)
+                        {
+                            if(canbus_config != NULL)
+                                if(!canbus_config->deserializeAction(xml))
+                                     Log::error("Device manager","Ignoring an ill-formed canbus action in input config.");
                         }
                         else  Log::warn("Device manager","An action is placed in an unexpected area in the input config file.");
                     }
@@ -526,6 +611,11 @@ bool DeviceManager::deserialize()
                         m_gamepad_configs.push_back(gamepad_config);
                         reading_now = NOTHING;
                     }
+                    else if (strcmp("canbus", xml->getNodeName()) == 0)
+                    {
+                        m_canbus_configs.push_back(canbus_config);
+                        reading_now = NOTHING;
+                    }
                 }
                     break;
 
@@ -536,8 +626,8 @@ bool DeviceManager::deserialize()
 
         if(UserConfigParams::logMisc())
         {
-            Log::info("Device manager","Found %d keyboard and %d gamepad configurations.",
-                   m_keyboard_configs.size(), m_gamepad_configs.size());
+            Log::info("Device manager","Found %d keyboard, %d gamepad and %d canbus configurations.",
+                   m_keyboard_configs.size(), m_gamepad_configs.size(), m_canbus_configs.size());
         }
 
         // For Debugging....
@@ -582,6 +672,10 @@ void DeviceManager::serialize()
     {
         m_gamepad_configs[n].serialize(configfile);
     }
+    for(unsigned int n=0; n<m_canbus_configs.size(); n++)
+    {
+        m_canbus_configs[n].serialize(configfile);
+    }
 
     configfile << "</input>\n";
     configfile.close();
@@ -610,5 +704,6 @@ void DeviceManager::shutdown()
     m_keyboards.clearAndDeleteAll();
     m_gamepad_configs.clearAndDeleteAll();
     m_keyboard_configs.clearAndDeleteAll();
+    m_canbus_configs.clearAndDeleteAll();
     m_latest_used_device = NULL;
 }   // shutdown

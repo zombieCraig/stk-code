@@ -66,9 +66,10 @@ struct Input
         IT_STICKBUTTON,
         //IT_STICKHAT,
         IT_MOUSEMOTION,
-        IT_MOUSEBUTTON
+        IT_MOUSEBUTTON,
+        IT_CANBUS
     };
-    static const int IT_LAST = IT_MOUSEBUTTON;
+    static const int IT_LAST = IT_CANBUS;
 
     InputType m_type;
     int       m_device_id;

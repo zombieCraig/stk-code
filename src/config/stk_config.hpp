@@ -113,6 +113,7 @@ public:
     int   m_max_display_news;        /**<How often a news message is displayed
                                          before it is ignored. */
     bool  m_enable_networking;
+    bool  m_enable_ctf;
 
     /** Disable steering if skidding is stopped. This can help in making
      *  skidding more controllable (since otherwise when trying to steer while

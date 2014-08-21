@@ -134,6 +134,9 @@
       work anymore - so for now don't enable this. -->
   <networking enable="false"/>
 
+  <!-- CTF - run in Capture The Flag mode.  Enables CANbus controls -->
+  <ctf enable="true"/>
+
   <!-- disable-while-unskid: Disable steering when stop skidding during 
            the time it takes to adjust the physical body with the graphics.
        camera-follow-skid: If true the camera will stay behind the kart,

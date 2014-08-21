@@ -196,6 +196,15 @@ void KartModel::loadInfo(const XMLNode &node)
     {
         hat_node->get("offset", &m_hat_offset);
     }
+
+    if(const XMLNode *canbus_node=node.getNode("canbus"))
+    {
+      if(const XMLNode *steering_node=canbus_node->getNode("steering"))
+      {
+        steering_node->get("arbid", &m_steering_arbid);
+        steering_node->get("position", &m_steering_position);
+      }
+    }
 }   // loadInfo
 
 // ----------------------------------------------------------------------------

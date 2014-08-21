@@ -64,6 +64,9 @@ namespace irr
 		*/
 		EET_USER_EVENT,
 
+		// CANBUS
+		EET_CANBUS_INPUT_EVENT,
+
 		//! This enum is never used, it only forces the compiler to
 		//! compile these enumeration values to 32 bit.
 		EGUIET_FORCE_32_BIT = 0x7fffffff
@@ -275,6 +278,13 @@ struct SEvent
 
 	};
 
+        struct SCanbusInput
+        {
+ 		s32 can_id;
+		u8 can_dlc;
+		u8 data[8];
+        };
+
 	//! Any kind of mouse event.
 	struct SMouseInput
 	{
@@ -416,6 +426,7 @@ struct SEvent
 	{
 		struct SGUIEvent GUIEvent;
 		struct SMouseInput MouseInput;
+		struct SCanbusInput CanbusInput;
 		struct SKeyInput KeyInput;
 		struct SJoystickEvent JoystickEvent;
 		struct SLogEvent LogEvent;

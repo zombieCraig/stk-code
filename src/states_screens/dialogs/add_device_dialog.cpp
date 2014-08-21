@@ -49,9 +49,9 @@ AddDeviceDialog::AddDeviceDialog() : ModalDialog(0.90f, 0.80f)
     const int buttonHeight = textHeight + 10;
 
 #ifdef ENABLE_WIIUSE
-    const int nbButtons = 3;
+    const int nbButtons = 4;
 #else
-    const int nbButtons = 2;
+    const int nbButtons = 3;
 #endif
 
     const int y_bottom = m_area.getHeight() - nbButtons*(buttonHeight + 10) - 10;
@@ -68,7 +68,8 @@ AddDeviceDialog::AddDeviceDialog() : ModalDialog(0.90f, 0.80f)
           "simultaneous keypresses and are thus inappropriate for multiplayer "
           "gameplay. (You can, however, connect multiple keyboards to the "
           "computer. Remember that everyone still needs different keybindings "
-          "in this case.)");
+          "in this case.)\n\nAdding a CANBus will use the default vcan0. "
+          "This will be configurable later.");
     IGUIStaticText* b =
         GUIEngine::getGUIEnv()->addStaticText(msg.c_str(),
                                               text_area,
@@ -102,6 +103,26 @@ AddDeviceDialog::AddDeviceDialog() : ModalDialog(0.90f, 0.80f)
         cur_y += y_stride;
     }
 #endif  // ENABLE_WIIUSE
+    // CANBus Defice
+    {
+        ButtonWidget* widget = new ButtonWidget();
+        widget->m_properties[PROP_ID] = "addcanbus";
+
+        //I18N: In the 'add new input device' dialog
+        widget->setText( _("Add a CANBus Interface") );
+
+        const int textWidth =
+            font->getDimension( widget->getText().c_str() ).Width + 40;
+
+        widget->m_x = m_area.getWidth()/2 - textWidth/2;
+        widget->m_y = cur_y;
+        widget->m_w = textWidth;
+        widget->m_h = buttonHeight;
+        widget->setParent(m_irrlicht_window);
+        m_widgets.push_back(widget);
+        widget->add();
+        cur_y += y_stride;
+    }
 
     {
         ButtonWidget* widget = new ButtonWidget();
@@ -166,6 +187,16 @@ GUIEngine::EventPropagation AddDeviceDialog::processEvent
     else if (eventSource == "addkeyboard")
     {
         input_manager->getDeviceList()->addEmptyKeyboard();
+        input_manager->getDeviceList()->serialize();
+        ModalDialog::dismiss();
+
+        ((OptionsScreenInput*)GUIEngine::getCurrentScreen())->rebuildDeviceList();
+
+        return GUIEngine::EVENT_BLOCK;
+    } 
+    else if (eventSource == "addcanbus")
+    {
+        input_manager->getDeviceList()->addDefaultCanbus();
         input_manager->getDeviceList()->serialize();
         ModalDialog::dismiss();
 

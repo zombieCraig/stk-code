@@ -26,6 +26,15 @@
 #include "input/input_manager.hpp"
 #include "states_screens/state_manager.hpp"
 #include "utils/no_copy.hpp"
+
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <linux/can.h>
+
 /**
   * \brief Input device type
   * \ingroup input
@@ -33,7 +42,8 @@
 enum DeviceType
 {
     DT_KEYBOARD,
-    DT_GAMEPAD
+    DT_GAMEPAD,
+    DT_CANBUS
 };
 
 /**
@@ -61,6 +71,40 @@ public:
 
     void setPlayer(StateManager::ActivePlayer* owner);
     StateManager::ActivePlayer *getPlayer() { return m_player; }
+};
+
+/**
+  * \brief specialisation of InputDevice for canbus type devices
+  * \ingroup input
+  */
+class CanbusDevice : public InputDevice
+{
+public:
+
+
+    CanbusDevice();
+    CanbusDevice(CanbusConfig *configuration);
+
+    int            canfd;
+    struct can_frame frame;
+    struct sockaddr_can caddr;
+    struct ifreq ifr;
+    socklen_t caddrlen;
+
+
+    /**
+     * Checks if this key belongs to this device. if yes, sets action and
+     *  returns true; otherwise returns false
+     *
+     * \param      id      ID of the key that was pressed
+     * \param      mode    Used to determine whether to bind menu actions or
+     *                     game actions
+     * \param[out] action  The action associated to this input (only check
+     *                     this value if method returned true)
+     */
+    bool processAndMapInput(const int id, InputManager::InputDriverMode mode,
+                            PlayerAction* action);
+
 };
 
 /**

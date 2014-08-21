@@ -54,8 +54,10 @@ private:
 
     PtrVector<KeyboardDevice, HOLD>    m_keyboards;
     PtrVector<GamePadDevice, HOLD>     m_gamepads;
+    PtrVector<CanbusDevice, HOLD>      m_canbuses;
     PtrVector<KeyboardConfig, HOLD>    m_keyboard_configs;
     PtrVector<GamepadConfig, HOLD>     m_gamepad_configs;
+    PtrVector<CanbusConfig, HOLD>      m_canbus_configs;
 
     /** The list of all joysticks that were found and activated. */
     core::array<SJoystickInfo>          m_irrlicht_gamepads;
@@ -81,6 +83,17 @@ private:
 
     /** Will be non-null in single-player mode */
     StateManager::ActivePlayer* m_single_player;
+    /**
+     * Helper method, only used internally. Takes care of analyzing canbus input.
+     *
+     * \param[out]  player     Which player this input belongs to (only set in ASSIGN mode)
+     * \param[out]  action     Which action is related to this input trigger
+     * \param       mode       Used to determine whether to determine menu actions or game actions
+     * \return                 The device to which this input belongs
+     */
+    InputDevice *mapCanbusInput     ( int btnID, InputManager::InputDriverMode mode,
+                                        StateManager::ActivePlayer **player /* out */,
+                                        PlayerAction *action /* out */);
 
     /**
      * Helper method, only used internally. Takes care of analyzing keyboard input.
@@ -132,6 +145,13 @@ public:
     KeyboardConfig*     getKeyboardConfig(const int i)      { return m_keyboard_configs.get(i); }
     KeyboardDevice*     getKeyboardFromBtnID(const int btnID);
 
+    // ----- Canbus ---
+    void addCanbus(CanbusDevice* d);
+    void addDefaultCanbus();
+    int                 getCanbusAmount()                 { return m_canbuses.size(); }
+    int                 getCanbusConfigAmount() const     { return m_canbus_configs.size(); }
+    CanbusDevice*       getCanbus(const int i)            { return m_canbuses.get(i); }
+    CanbusConfig*       getCanbusConfig(const int i)      { return m_canbus_configs.get(i); }
 
     /**
       * \brief Delete the given config and removes DeviceManager references to it.

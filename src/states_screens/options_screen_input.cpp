@@ -59,11 +59,13 @@ void OptionsScreenInput::loadedFromFile()
     video::ITexture* icon1 = irr_driver->getTexture( file_manager->getAsset(FileManager::GUI,"keyboard.png"   ));
     video::ITexture* icon2 = irr_driver->getTexture( file_manager->getAsset(FileManager::GUI,"gamepad.png"    ));
     video::ITexture* icon3 = irr_driver->getTexture( file_manager->getAsset(FileManager::GUI,"gamepad_off.png"));
+    video::ITexture* icon4 = irr_driver->getTexture( file_manager->getAsset(FileManager::GUI,"canbus.png"     ));
 
     m_icon_bank = new irr::gui::STKModifiedSpriteBank( GUIEngine::getGUIEnv() );
     m_icon_bank->addTextureAsSprite(icon1);
     m_icon_bank->addTextureAsSprite(icon2);
     m_icon_bank->addTextureAsSprite(icon3);
+    m_icon_bank->addTextureAsSprite(icon4);
 
     // scale icons depending on screen resolution. the numbers below are a bit arbitrary
     const int screen_width = irr_driver->getFrameSize().Width;
@@ -94,6 +96,19 @@ void OptionsScreenInput::buildDeviceList()
         // since irrLicht's list widget has the nasty tendency to put the
         // icons very close to the text, I'm adding spaces to compensate.
         devices->addItem(internal_name, (core::stringw("   ") + _("Keyboard %i", i)).c_str(), 0 /* icon */);
+    }
+
+    const int canbus_config_count = input_manager->getDeviceList()->getCanbusConfigAmount();
+    for (int i=0; i<canbus_config_count; i++)
+    {
+
+        std::ostringstream vcanname;
+        vcanname << "vcan" << i;
+        const std::string internal_name = vcanname.str();
+
+        // since irrLicht's list widget has the nasty tendency to put the
+        // icons very close to the text, I'm adding spaces to compensate.
+        devices->addItem(internal_name, (core::stringw("   ") + _("Vcan%i", i)).c_str(), 3 /* icon */);
     }
 
     const int gpad_config_count = input_manager->getDeviceList()->getGamePadConfigAmount();

@@ -256,6 +256,31 @@ bool DeviceConfig::deserializeAction(irr::io::IrrXMLReader* xml)
 //  KeyboardConfig & GamepadConfig classes really should be in a separate cpp
 //  file but they are so small that we'll just leave them here for now.
 
+//==== C A N B U S C O N F I G =============================================
+
+void CanbusConfig::serialize (std::ofstream& stream)
+{
+    stream << "<canbus>\n\n";
+    DeviceConfig::serialize(stream);
+    stream << "</canbus>\n\n\n";
+}
+
+//------------------------------------------------------------------------------
+
+void CanbusConfig::setDefaultBinds()
+{
+
+}
+
+//------------------------------------------------------------------------------
+
+CanbusConfig::CanbusConfig() : DeviceConfig(DEVICE_CONFIG_TYPE_CANBUS)
+{
+    m_name = "Canbus";
+    m_plugged = 1;
+    setDefaultBinds();
+}
+
 //==== K E Y B O A R D C O N F I G =============================================
 
 void KeyboardConfig::serialize (std::ofstream& stream)

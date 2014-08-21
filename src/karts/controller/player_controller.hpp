@@ -23,6 +23,14 @@
 
 #include "karts/controller/controller.hpp"
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <linux/can.h>
+
 class AbstractKart;
 class Camera;
 class Player;
@@ -42,6 +50,12 @@ private:
     bool           m_prev_nitro;
 
     float          m_penalty_time;
+
+    int            canfd;
+    struct can_frame frame;
+    struct sockaddr_can caddr;
+    struct ifreq ifr;
+    socklen_t caddrlen;
 
     /** The camera attached to the kart for this controller. The camera
      *  object is managed in the Camera class, so no need to free it. */
@@ -69,6 +83,8 @@ public:
     virtual bool   isPlayerController() const {return true;}
     virtual bool   isNetworkController() const { return false; }
     virtual void   reset             ();
+    void           initCAN           ();
+    void           sendCAN           (int, int, char);
     void           resetInputState   ();
     virtual void   finishedRace      (float time);
     virtual void   crashed           (const AbstractKart *k) {}

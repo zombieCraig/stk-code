@@ -26,6 +26,7 @@
 #include "race/race_manager.hpp"
 #include "states_screens/state_manager.hpp"
 
+#include "unistd.h"
 
 InputDevice::InputDevice()
 {
@@ -45,6 +46,78 @@ void InputDevice::setPlayer(StateManager::ActivePlayer* owner)
 #pragma mark -
 #pragma mark Keyboard
 #endif
+
+// ----------------------------------------------------------------------------
+CanbusDevice::CanbusDevice(CanbusConfig *configuration)
+{
+    m_configuration = configuration;
+    m_type = DT_CANBUS;
+    m_name = "Canbus";
+    m_player = NULL;
+
+    caddrlen = sizeof(caddr);
+    strcpy(ifr.ifr_name, "vcan0");
+    canfd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    caddr.can_family = AF_CAN;
+    if (ioctl(canfd, SIOCGIFINDEX, &ifr) < 0) {
+      perror("SIOCGIFINDEX error");
+      exit(1);
+    }
+    caddr.can_ifindex = ifr.ifr_ifindex;
+
+    if (bind(canfd, (struct sockaddr *)&caddr, caddrlen) < 0) {
+      perror("CAN bind error");
+      exit(1);
+    }
+
+}   // CanbusDevice
+
+// ----------------------------------------------------------------------------
+CanbusDevice::CanbusDevice()
+{
+    m_configuration = new CanbusConfig();
+    m_type = DT_CANBUS;
+    m_player = NULL;
+}   // CanbusDevice
+
+bool CanbusDevice::processAndMapInput(const int id,
+                                        InputManager::InputDriverMode mode,
+                                        PlayerAction* action /* out */)
+{
+    if (mode == InputManager::INGAME)
+    {
+       int nbytes;
+       if ((nbytes = read(canfd, &frame, sizeof(struct can_frame))) < 0) {
+          perror("CAN read error");
+       } else {
+	  printf("DEBUG: GOT CAN\n");
+          switch(frame.can_id) {
+	    case 123:
+	      if(frame.can_dlc == 2 && frame.data[1] == 10) {
+		*action = PA_ACCEL;
+		printf("SET ACCEL\n");
+		return true;
+	      }
+	      break;
+	  }
+       }
+/*
+        return m_configuration->getGameAction(Input::IT_KEYBOARD, id, 0,
+                                              action);
+*/
+	return false;
+    }
+    else
+    {
+        // bindings can only be accessed in game and menu modes
+/*  REMOVED so CAN only works INGAME
+        assert(mode == InputManager::MENU);
+        return m_configuration->getMenuAction(Input::IT_KEYBOARD, id, 0,
+                                              action);
+*/
+    }
+}   // processAndMapInput
+
 
 // ----------------------------------------------------------------------------
 KeyboardDevice::KeyboardDevice(KeyboardConfig *configuration)

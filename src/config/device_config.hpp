@@ -34,7 +34,8 @@
 enum DeviceConfigType
 {
     DEVICE_CONFIG_TYPE_GAMEPAD,
-    DEVICE_CONFIG_TYPE_KEYBOARD
+    DEVICE_CONFIG_TYPE_KEYBOARD,
+    DEVICE_CONFIG_TYPE_CANBUS
 };
 
 
@@ -147,6 +148,23 @@ public:
     void        serialize           (std::ofstream& stream);
 
     KeyboardConfig                  ();
+};
+
+//==== C A N B U S C O N F I G =============================================
+
+/**
+  * \brief specialisation of DeviceConfig for canbus type devices
+  * \ingroup config
+  */
+class CanbusConfig : public DeviceConfig
+{
+
+public:
+
+    void        setDefaultBinds     ();
+    void        serialize           (std::ofstream& stream);
+
+    CanbusConfig                  ();
 };
 
 

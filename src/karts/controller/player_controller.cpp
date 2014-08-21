@@ -42,6 +42,16 @@
 #include "utils/log.hpp"
 #include "utils/translation.hpp"
 
+/* CAN Stuff */
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <linux/can.h>
+
+
 /** The constructor for a player kart.
  *  \param kart_name Name of the kart.
  *  \param position The starting position (1 to n).
@@ -67,6 +77,7 @@ PlayerController::PlayerController(AbstractKart *kart,
     m_grab_sound   = sfx_manager->createSoundSource( "grab_collectable" );
     m_full_sound   = sfx_manager->createSoundSource( "energy_bar_full" );
 
+    initCAN();
     reset();
 }   // PlayerController
 
@@ -95,6 +106,44 @@ void PlayerController::reset()
     m_prev_nitro   = false;
     m_penalty_time = 0;
 }   // reset
+
+// ----------------------------------------------------------------------------
+/** CAN Functions
+ */
+void PlayerController::initCAN()
+{
+    caddrlen = sizeof(caddr);
+    strcpy(ifr.ifr_name, "vcan0");
+    canfd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    caddr.can_family = AF_CAN;
+    if (ioctl(canfd, SIOCGIFINDEX, &ifr) < 0) {
+      perror("SIOCGIFINDEX error");
+      exit(1);
+    }
+    caddr.can_ifindex = ifr.ifr_ifindex;
+
+    if (bind(canfd, (struct sockaddr *)&caddr, caddrlen) < 0) {
+      perror("CAN bind error");
+      exit(1);
+    }
+}
+
+void PlayerController::sendCAN(int canid, int pos, char byte)
+{
+   frame.can_id = canid;
+   frame.can_dlc = pos+1;
+   int i;
+   for(i = 0; i < 8; i++) {
+     if(i == pos) {
+       frame.data[i] = byte;
+     } else {
+       if(rand() % 3 < 1) frame.data[i] = rand() % 255;
+     }
+   }
+   int n;
+   if ((n = write(canfd, &frame, sizeof(frame))) != sizeof(frame))
+    perror("CAN write error");
+}
 
 // ----------------------------------------------------------------------------
 /** Resets the state of control keys. This is used after the in-game menu to
@@ -136,6 +185,7 @@ void PlayerController::action(PlayerAction action, int value)
           m_steer_val = value;
           if(m_controls->m_skid==KartControl::SC_NO_DIRECTION)
               m_controls->m_skid = KartControl::SC_LEFT;
+          sendCAN(0x310, 0, 1);
         }
         else
           m_steer_val = m_steer_val_r;
@@ -148,6 +198,7 @@ void PlayerController::action(PlayerAction action, int value)
             m_steer_val = -value;
             if(m_controls->m_skid==KartControl::SC_NO_DIRECTION)
                 m_controls->m_skid = KartControl::SC_RIGHT;
+            sendCAN(0x310, 0, 2);
         }
         else
           m_steer_val = m_steer_val_l;
@@ -160,6 +211,7 @@ void PlayerController::action(PlayerAction action, int value)
             m_controls->m_accel = value/32768.0f;
             m_controls->m_brake = false;
             m_controls->m_nitro = m_prev_nitro;
+            sendCAN(123, 2, 10);  // TODO Put accel data
         }
         else
         {
@@ -176,6 +228,7 @@ void PlayerController::action(PlayerAction action, int value)
             m_controls->m_brake = true;
             m_controls->m_accel = 0.0f;
             m_controls->m_nitro = false;
+            sendCAN(0x210, 3, 0xff); 
         }
         else
         {
@@ -190,13 +243,16 @@ void PlayerController::action(PlayerAction action, int value)
         m_prev_nitro = (value != 0);
         // Enable nitro only when also accelerating
         m_controls->m_nitro = ((value!=0) && m_controls->m_accel);
+	sendCAN(0x124,1,0xb);
         break;
     case PA_RESCUE:
         m_controls->m_rescue = (value!=0);
+	sendCAN(0x311,5,127);
         break;
     case PA_FIRE:
     {
         m_controls->m_fire = (value!=0);
+	sendCAN(0x444,4,4);
         break;
     }
     case PA_LOOK_BACK:
@@ -212,6 +268,7 @@ void PlayerController::action(PlayerAction action, int value)
                 m_controls->m_skid = m_steer_val<0
                                    ? KartControl::SC_RIGHT
                                    : KartControl::SC_LEFT;
+            sendCAN(0x31A,0,3);
         break;
     case PA_PAUSE_RACE:
         if (value != 0) StateManager::get()->escapePressed();

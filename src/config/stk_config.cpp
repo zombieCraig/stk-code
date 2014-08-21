@@ -370,6 +370,9 @@ void STKConfig::getAllData(const XMLNode * root)
     if(const XMLNode *networking_node= root->getNode("networking"))
         networking_node->get("enable", &m_enable_networking);
 
+    if(const XMLNode *ctf_node = root->getNode("ctf"))
+        ctf_node->get("enable", &m_enable_ctf);
+
     if(const XMLNode *replay_node = root->getNode("replay"))
     {
         replay_node->get("delta-angle", &m_replay_delta_angle);

@@ -336,6 +336,18 @@ void InputManager::inputSensing(Input::InputType type, int deviceID,
             return;
         }
         break;
+    case Input::IT_CANBUS:
+        if (value > Input::MAX_VALUE/2) {
+            std::cout << "Sense CANBUS\n";
+            Input sensed_input;
+            sensed_input.m_type           = Input::IT_CANBUS;
+            sensed_input.m_device_id      = deviceID;
+            sensed_input.m_button_id      = button;
+            sensed_input.m_character      = deviceID;
+            OptionsScreenInput2::getInstance()->gotSensedInput(sensed_input);
+            return;
+        }
+        break;
     case Input::IT_STICKBUTTON:
         if (abs(value) > Input::MAX_VALUE/2.0f)
         {
@@ -478,6 +490,7 @@ void InputManager::dispatchInput(Input::InputType type, int deviceID,
 {
     // Act different in input sensing mode.
     if (m_mode == INPUT_SENSE_KEYBOARD ||
+        m_mode == INPUT_SENSE_CANBUS ||
         m_mode == INPUT_SENSE_GAMEPAD)
     {
         // Do not pick disabled gamepads for input sensing
@@ -801,6 +814,12 @@ EventPropagation InputManager::input(const SEvent& event)
             gp->setButtonPressed(i, isButtonPressed);
         }
 
+    }
+    else if (event.EventType == EET_CANBUS_INPUT_EVENT)
+    {
+	std::cout << "DISPATCH CANBUS EVENT\n";
+            dispatchInput(Input::IT_CANBUS, event.CanbusInput.can_id, 0,
+                          Input::AD_POSITIVE, 0);
     }
     else if (event.EventType == EET_KEY_INPUT_EVENT)
     {

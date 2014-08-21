@@ -139,6 +139,12 @@ private:
     /** Name of the hat to use for this kart. "" if no hat. */
     std::string m_hat_name;
 
+    /** The CANBus steering arbitration ID */
+    int m_steering_arbid;
+
+    /** The CANBus steering packet position */
+    int m_steering_position;
+
     /** Value used to indicate undefined entries. */
     static float UNDEFINED;
 
