@@ -19,6 +19,7 @@ This version of STK has been modified so that when you drive around the course, 
 What is working:
 * Sends CANBus packets to vcan0 for every command the vehicle takes
 * Has an input config screen and icon for adding CANBus interfaces
+
 TODO:
 * Accept reading from CAN to work as input to the vehicle
 * Each kart should have it's own unique packets specified in the vehicles XML config
