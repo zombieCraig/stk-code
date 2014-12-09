@@ -1,5 +1,4 @@
 #SuperTuxKart
-[![Build Status](https://travis-ci.org/supertuxkart/stk-code.png?branch=master)](https://travis-ci.org/supertuxkart/stk-code)
 
 SuperTuxKart is a free kart racing game. It is focusing on fun and
 not on realistic kart physics. Instruction can be found on the
@@ -14,6 +13,18 @@ Hope you enjoy the game.
 
 -- The SuperTuxKart development team.
 
+## CANBus Modifications
+This version of STK has been modified so that when you drive around the course, CANBus messages are sent to vcan0.  Some work has been done to add CAN interfaces to the input screen as well.  Right now the CANBus messages are hard coded.  This game was used for the Hungry Hungry Hackers (H3) CTF event in 2014.
+
+What is working:
+* Sends CANBus packets to vcan0 for every command the vehicle takes
+* Has an input config screen and icon for adding CANBus interfaces
+TODO:
+* Accept reading from CAN to work as input to the vehicle
+* Each kart should have it's own unique packets specified in the vehicles XML config
+* Multiplayer support
+
+Realistically I will not have time to get to the TODO area but that was the original goals of this project.  Any questions contact craig at theialabs.com
 
 ##Hardware Requirements
 * You need a 3D graphics card. (NVIDIA GeForce 8xxx and higher, ATI Radeon HD 4xxx and higher or Intel HD 3000 and higher)
